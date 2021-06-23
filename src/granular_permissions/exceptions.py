@@ -1,0 +1,2 @@
+class NonexistentPermission(ValueError):
+    pass
