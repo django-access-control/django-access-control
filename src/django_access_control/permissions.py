@@ -3,7 +3,7 @@ from typing import Literal, Any
 from django.contrib.auth.models import AbstractUser
 from django.db.models import Model
 
-from .managers import ConfidentialQuerySet
+from .querysets import ConfidentialQuerySet
 
 ModelAction = Literal["add", "view", "change", "delete"]
 ObjectAction = Literal["view", "change", "delete"]

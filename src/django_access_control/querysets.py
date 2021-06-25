@@ -29,5 +29,5 @@ class ConfidentialQuerySet(QuerySet):
     def can_delete(self, user: AbstractUser) -> QuerySet:
         return self.none()
 
-    def has_any_permissions(self, subject: AbstractUser) -> bool:
-        return (self.can_view(subject) | self.can_change(subject) | self.can_delete(subject)).exists()
+    def has_some_permissions(self, user: AbstractUser) -> QuerySet:
+        return self.can_view(user) | self.can_change(user) | self.can_delete(user)

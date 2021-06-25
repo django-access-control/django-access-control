@@ -16,4 +16,4 @@ class AuthenticationBackend(BaseBackend):
         """
         app_models = list(apps.get_app_config(app_label).get_models())
         confidential_models = {m for m in app_models if is_confidential(m)}
-        return any({m.objects.all().has_any_permissions(user_obj) for m in confidential_models})
+        return any({m.objects.all().has_some_permissions(user_obj).exists() for m in confidential_models})
