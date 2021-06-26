@@ -1,4 +1,4 @@
-# Django Granular Permissions
+# Django Access Control
 
 Object and field level access control for Django.
 
