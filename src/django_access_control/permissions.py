@@ -1,57 +1,51 @@
-from typing import Literal, Any
+from typing import Literal, Type
 
 from django.contrib.auth.models import AbstractUser
 from django.db.models import Model
-
-from .querysets import ConfidentialQuerySet
 
 ModelAction = Literal["add", "view", "change", "delete"]
 ObjectAction = Literal["view", "change", "delete"]
 FieldAction = Literal["view", "change"]
 
 
-class Permission:
+# class Permission:
+#
+#     def is_authorized(self, user: AbstractUser) -> bool:
+#         return user.is_superuser
+#
+#
+# class AllModelPermission(Permission):
+#
+#     def __init__(self, action: ModelAction, model: Model):
+#         self.action = action
+#         self.model = model
+#
+#     def is_authorized(self, user: AbstractUser) -> bool:
+#         return super().is_authorized(user) or has_permission(user, self.action, self.model)
+#
+#
+# class AnyModelPermission(AllModelPermission):
+#
+#     def is_authorized(self, user: AbstractUser) -> bool:
+#         return super().is_authorized(user) or (
+#                 is_confidential(self.model) and self.model.objects.all().can(user, self.action).exists())
+#
+#
+# class AllObjectPermission(AllModelPermission):
+#
+#     def __init__(self, action: ModelAction, model: Model, pk: Any):
+#         super().__init__(action, model)
+#         self.pk = pk
+#
+#     def is_authorized(self, user: AbstractUser) -> bool:
+#         return super().is_authorized(user) or (
+#                 is_confidential(self.model) and self.model.objects.all().can(user, self.action).filter(
+#             pk=self.pk).exists())
 
-    def is_authorized(self, user: AbstractUser) -> bool:
-        return user.is_superuser
 
-
-class AllModelPermission(Permission):
-
-    def __init__(self, action: ModelAction, model: Model):
-        self.action = action
-        self.model = model
-
-    def is_authorized(self, user: AbstractUser) -> bool:
-        return super().is_authorized(user) or has_model_permission(user, self.action, self.model)
-
-
-class AnyModelPermission(AllModelPermission):
-
-    def is_authorized(self, user: AbstractUser) -> bool:
-        return super().is_authorized(user) or (
-                is_confidential(self.model) and self.model.objects.all().can(user, self.action).exists())
-
-
-class AllObjectPermission(AllModelPermission):
-
-    def __init__(self, action: ModelAction, model: Model, pk: Any):
-        super().__init__(action, model)
-        self.pk = pk
-
-    def is_authorized(self, user: AbstractUser) -> bool:
-        return super().is_authorized(user) or (
-                is_confidential(self.model) and self.model.objects.all().can(user, self.action).filter(
-            pk=self.pk).exists())
-
-
-def has_model_permission(user: AbstractUser, action: ModelAction, model: Model) -> bool:
+def has_permission(user: AbstractUser, action: ModelAction, model: Type[Model]) -> bool:
     permission_str = f"{model._meta.app_label}.{action}_{model._meta.model_name}"
     return user.has_perm(permission_str)
-
-
-def is_confidential(model: Model) -> bool:
-    return issubclass(model.objects._queryset_class, ConfidentialQuerySet)
 
 #
 # @dataclass(frozen=True)

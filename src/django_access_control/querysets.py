@@ -1,33 +1,57 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+
+from typing import FrozenSet
 
 from django.contrib.auth.models import AbstractUser
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Model
 
-if TYPE_CHECKING: from .permissions import ObjectAction
+from .models import all_field_names
+
+from .permissions import has_permission
 
 
 class ConfidentialQuerySet(QuerySet):
-    def can(self, subject: AbstractUser, action: ObjectAction) -> QuerySet:
-        """
-        Return a QuerySet with object on which the user `subject` can perform the specified `verb`.
-        """
-        if action == "add": raise ValueError("Add permission can only be given for models, not individual objects")
-        cases = {
-            "view": self.can_view(subject),
-            "change": self.can_change(subject),
-            "delete": self.can_delete(subject),
-        }
-        return cases[action]
 
-    def can_view(self, user: AbstractUser) -> QuerySet:
-        return self.none()
+    # Table wide permissions
 
-    def can_change(self, user: AbstractUser) -> QuerySet:
-        return self.none()
+    def has_table_wide_add_permission(self, user: AbstractUser) -> bool:
+        return user.is_superuser or has_permission(user, "add", self.model)
 
-    def can_delete(self, user: AbstractUser) -> QuerySet:
-        return self.none()
+    def has_table_wide_view_permission(self, user: AbstractUser) -> bool:
+        return user.is_superuser or has_permission(user, "view", self.model)
+
+    def has_table_wide_change_permission(self, user: AbstractUser) -> bool:
+        return user.is_superuser or has_permission(user, "change", self.model)
+
+    def has_table_wide_delete_permission(self, user: AbstractUser) -> bool:
+        return user.is_superuser or has_permission(user, "delete", self.model)
+
+    # Row permissions
+
+    def rows_with_view_permission(self, user: AbstractUser) -> QuerySet:
+        return self if self.has_table_wide_view_permission(user) else self.none()
+
+    def rows_with_change_permission(self, user: AbstractUser) -> QuerySet:
+        return self if self.has_table_wide_change_permission(user) else self.none()
+
+    def rows_with_delete_permission(self, user: AbstractUser) -> QuerySet:
+        return self if self.has_table_wide_delete_permission(user) else self.none()
+
+    # Column permissions
+    @staticmethod
+    def viewable_fields(user: AbstractUser, obj) -> FrozenSet[str]:
+        return frozenset(all_field_names(obj))
+
+    @staticmethod
+    def changeable_fields(user: AbstractUser, obj) -> FrozenSet[str]:
+        return frozenset(all_field_names(obj))
 
     def has_some_permissions(self, user: AbstractUser) -> QuerySet:
-        return self.can_view(user) | self.can_change(user) | self.can_delete(user)
+        return (self if self.has_table_wide_add_permission(user) else self.none()) | \
+               self.rows_with_delete_permission(user) | \
+               self.rows_with_change_permission(user) | \
+               self.rows_with_view_permission(user)
+
+
+def is_confidential(model: Model) -> bool:
+    return issubclass(model.objects._queryset_class, ConfidentialQuerySet)

@@ -2,7 +2,7 @@ from django.apps import apps
 from django.contrib.auth.backends import BaseBackend
 from django.contrib.auth.models import AbstractUser
 
-from .permissions import is_confidential
+from .querysets import is_confidential
 
 
 class AuthenticationBackend(BaseBackend):
