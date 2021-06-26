@@ -8,11 +8,16 @@ from .utils import order_set_by_iterable
 
 class ConfidentialModelAdmin(admin.ModelAdmin):
 
+    def has_add_permission(self, request) -> bool:
+        return self.model.objects._queryset_class().has_table_wide_add_permission(request.user)
+
     def has_change_permission(self, request, obj: Model = None) -> bool:
-        return self.model.objects.all().rows_with_change_permission(request.user).exists()
+        rows_with_change_permission = self.model.objects.all().rows_with_change_permission(request.user)
+        return rows_with_change_permission.contains(obj) if obj else rows_with_change_permission.exists()
 
     def has_view_permission(self, request, obj: Model = None) -> bool:
-        return self.model.objects.all().rows_with_view_permission(request.user).exists()
+        rows_with_view_permission = self.model.objects.all().rows_with_view_permission(request.user)
+        return rows_with_view_permission.contains(obj) if obj else rows_with_view_permission.exists()
 
     def get_queryset(self, request) -> QuerySet:
         return super().get_queryset(request).all().has_some_permissions(request.user)

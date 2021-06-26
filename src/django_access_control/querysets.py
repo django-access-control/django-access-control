@@ -52,6 +52,9 @@ class ConfidentialQuerySet(QuerySet):
                self.rows_with_change_permission(user) | \
                self.rows_with_view_permission(user)
 
+    def contains(self, obj: Model) -> bool:
+        return self.filter(pk=obj.pk).exists()
+
 
 def is_confidential(model: Model) -> bool:
     return issubclass(model.objects._queryset_class, ConfidentialQuerySet)
