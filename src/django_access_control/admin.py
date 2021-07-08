@@ -36,14 +36,20 @@ class ConfidentialModelAdmin(admin.ModelAdmin):
         return order_set_by_iterable(self.permissions.changeable_fields(request.user, obj), self.all_fields)
 
     def get_fields(self, request, obj=None) -> List[str]:
-        # all_fields_to_show = list(self.get_changeable_fields(request)) + list(self.get_changeable_fields(request))
-        editable_fiels = self.get_addable_fields(request) if obj is None else self.get_changeable_fields(request, obj)
-        return order_set_by_iterable(editable_fiels, self.all_fields)
+        if not obj:
+            fields_to_show = self.get_addable_fields(request)
+        else:
+            viewable_fields = self.permissions.viewable_fields(request.user, obj)
+            print("Viewable", viewable_fields)
+            changible_fields = self.permissions.changeable_fields(request.user, obj)
+            print("Changible", changible_fields)
+            fields_to_show = changible_fields | viewable_fields
+        return order_set_by_iterable(fields_to_show, self.all_fields)
 
     def get_readonly_fields(self, request, obj=None) -> List[str]:
-        if obj is None: return []
+        if obj is None : return []
         viewable_fields = self.permissions.viewable_fields(request.user, obj)
-        changible_fields = self.get_changeable_fields(request)
+        changible_fields = self.permissions.changeable_fields(request.user, obj)
         return order_set_by_iterable(viewable_fields - changible_fields, all_field_names(self.model))
 
     def has_module_permission(self, request):
