@@ -29,15 +29,31 @@ class ConfidentialQuerySet(QuerySet):
     # Row permissions
 
     def rows_with_view_permission(self, user: AbstractUser) -> QuerySet:
-        return self if self.has_table_wide_view_permission(user) else self.none()
+        return (self if self.has_table_wide_view_permission(user) else self.none()) \
+               | self.rows_with_extra_view_permission(user)
 
     def rows_with_change_permission(self, user: AbstractUser) -> QuerySet:
-        return self if self.has_table_wide_change_permission(user) else self.none()
+        return (self if self.has_table_wide_change_permission(user) else self.none()) \
+               | self.rows_with_extra_change_permission(user)
 
     def rows_with_delete_permission(self, user: AbstractUser) -> QuerySet:
-        return self if self.has_table_wide_delete_permission(user) else self.none()
+        return (self if self.has_table_wide_delete_permission(user) else self.none()) \
+               | self.rows_with_extra_delete_permission(user)
+
+    def rows_with_extra_view_permission(self, user: AbstractUser) -> QuerySet:
+        return self.none()
+
+    def rows_with_extra_change_permission(self, user: AbstractUser) -> QuerySet:
+        return self.none()
+
+    def rows_with_extra_delete_permission(self, user: AbstractUser) -> QuerySet:
+        return self.none()
 
     # Column permissions
+    @classmethod
+    def addable_fields(cls, user: AbstractUser) -> FrozenSet[str]:
+        return frozenset(all_field_names(cls.model))
+
     @staticmethod
     def viewable_fields(user: AbstractUser, obj) -> FrozenSet[str]:
         return frozenset(all_field_names(obj))
@@ -46,9 +62,14 @@ class ConfidentialQuerySet(QuerySet):
     def changeable_fields(user: AbstractUser, obj) -> FrozenSet[str]:
         return frozenset(all_field_names(obj))
 
-    def has_some_permissions(self, user: AbstractUser) -> QuerySet:
-        return (self if self.has_table_wide_add_permission(user) else self.none()) | \
-               self.rows_with_delete_permission(user) | \
+    def has_some_permissions(self, user: AbstractUser) -> bool:
+        return ((self if self.has_table_wide_add_permission(user) else self.none()) | \
+                self.rows_with_delete_permission(user) | \
+                self.rows_with_change_permission(user) | \
+                self.rows_with_view_permission(user)).exists()
+
+    def rows_with_some_permission(self, user: AbstractUser) -> QuerySet:
+        return self.rows_with_delete_permission(user) | \
                self.rows_with_change_permission(user) | \
                self.rows_with_view_permission(user)
 
