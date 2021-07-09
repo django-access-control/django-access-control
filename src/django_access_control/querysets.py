@@ -52,14 +52,26 @@ class ConfidentialQuerySet(QuerySet):
     # Column permissions
     @classmethod
     def addable_fields(cls, user: AbstractUser) -> FrozenSet[str]:
+        """
+        Control which fields the user can specify when creating a new object (row).
+        NB! Make sure that all not nullable fields that are not specified here
+        would be populated automatically
+        to prevent IntegrityError for the database.
+        """
         return frozenset(all_field_names(cls.model))
 
     @staticmethod
     def viewable_fields(user: AbstractUser, obj) -> FrozenSet[str]:
+        """
+        Control which wields the user can view.
+        """
         return frozenset(all_field_names(obj))
 
     @staticmethod
     def changeable_fields(user: AbstractUser, obj) -> FrozenSet[str]:
+        """
+        Control which wields the user can edit.
+        """
         return frozenset(all_field_names(obj))
 
     def has_some_permissions(self, user: AbstractUser) -> bool:
