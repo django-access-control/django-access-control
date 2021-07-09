@@ -63,9 +63,9 @@ class ConfidentialQuerySet(QuerySet):
         return frozenset(all_field_names(obj))
 
     def has_some_permissions(self, user: AbstractUser) -> bool:
-        return ((self if self.has_table_wide_add_permission(user) else self.none()) | \
-                self.rows_with_delete_permission(user) | \
-                self.rows_with_change_permission(user) | \
+        return self.has_table_wide_add_permission(user) or \
+               (self.rows_with_delete_permission(user) |
+                self.rows_with_change_permission(user) |
                 self.rows_with_view_permission(user)).exists()
 
     def rows_with_some_permission(self, user: AbstractUser) -> QuerySet:
