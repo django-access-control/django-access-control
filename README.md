@@ -1,5 +1,5 @@
 # Django Access Control
 
-Object and field level access control for Django.
+Django Access Control is a flexible and developer friendly framework for managing table, row and field level permissions.
 
-The project is in active development, documentation will be added soon.
+Refer to the [user guide](/docs/userguide/) to get started!
